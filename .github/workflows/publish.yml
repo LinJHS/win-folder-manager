@@ -34,6 +34,9 @@ jobs:
   publish-pypi:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -51,10 +54,7 @@ jobs:
           python -m build
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+        uses: pypa/gh-action-pypi-publish@release/v1
 
 # Notes:
 # - Create repository secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, PYPI_API_TOKEN
