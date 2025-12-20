@@ -17,3 +17,6 @@ manager/_version.py
 
 # Wiki
 win-folder-manager.wiki/
+
+# Scripts
+*.bat
