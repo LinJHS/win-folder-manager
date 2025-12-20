@@ -119,22 +119,40 @@ def open_browser(port):
     webbrowser.open_new(f"http://127.0.0.1:{port}")
 
 
-def start_server(port=6800, debug=False, open_browser_on_start=True):
+def start_server(host='127.0.0.1', port=6800, debug=False, open_browser_on_start=True):
     if open_browser_on_start:
         Timer(1, lambda: open_browser(port)).start()
-    app.run(port=port, debug=debug)
+    
+    try:
+        app.run(host=host, port=port, debug=debug)
+    except OSError as e:
+        import sys
+        # Handle "Address already in use" error
+        if e.errno == 98 or e.errno == 10048:
+            print(f"\nError: Port {port} is already in use.")
+            print("Please try using a different port with the --port argument.")
+            print(f"Example: win-folder-manager --port {port + 1}\n")
+            sys.exit(1)
+        raise
 
 
 def main():
     import argparse
+    import sys
+    
     parser = argparse.ArgumentParser(description="Win Folder Manager")
     parser.add_argument("-p", "--port", type=int, default=6800, help="Port to run the server on (default: 6800)")
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)")
     parser.add_argument("--debug", action="store_true", help="Run in debug mode")
     parser.add_argument("--no-browser", action="store_true", help="Do not open browser on start")
     
     args = parser.parse_args()
     
-    start_server(port=args.port, debug=args.debug, open_browser_on_start=not args.no_browser)
+    if not (1 <= args.port <= 65535):
+        print("\nError: Port must be between 1 and 65535.\n")
+        sys.exit(1)
+    
+    start_server(host=args.host, port=args.port, debug=args.debug, open_browser_on_start=not args.no_browser)
 
 
 # Alias for backward compatibility or direct import usage

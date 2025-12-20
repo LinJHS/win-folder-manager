@@ -65,6 +65,7 @@ The application will start a local web server (default: `http://127.0.0.1:6800`)
 You can customize the startup behavior with the following arguments:
 
 - `-p`, `--port`: Specify the server port (default: 6800)
+- `--host`: Specify the host to bind to (default: 127.0.0.1)
 - `--no-browser`: Do not open the browser automatically on start
 - `--debug`: Run in Flask debug mode
 
@@ -73,6 +74,9 @@ Examples:
 ```bash
 # Run on port 9000
 win-folder-manager -p 9000
+
+# Allow external access
+win-folder-manager --host 0.0.0.0
 
 # Start server only, without opening browser
 win-folder-manager --no-browser

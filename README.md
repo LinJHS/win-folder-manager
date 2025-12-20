@@ -65,6 +65,7 @@ python -m manager
 您可以使用以下参数自定义启动行为：
 
 - `-p`, `--port`: 指定服务器端口 (默认: 6800)
+- `--host`: 指定监听地址 (默认: 127.0.0.1)
 - `--no-browser`: 启动时不自动打开浏览器
 - `--debug`: 开启 Flask 调试模式
 
@@ -73,6 +74,9 @@ python -m manager
 ```bash
 # 在端口 9000 启动
 win-folder-manager -p 9000
+
+# 允许局域网访问
+win-folder-manager --host 0.0.0.0
 
 # 仅启动服务器，不打开浏览器
 win-folder-manager --no-browser

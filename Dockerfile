@@ -6,4 +6,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 EXPOSE 6800
-CMD ["python", "-m", "manager"]
+CMD ["python", "-m", "manager", "--host", "0.0.0.0", "--no-browser"]
