@@ -13,7 +13,7 @@ def read_requirements():
 setup(
     name='win-folder-manager',
     use_scm_version=True,
-    description='Windows desktop.ini folder manager web UI',
+    description='A lightweight, Flask-powered web file manager for Windows. Manage, browse, and transfer files via a clean browser UI.',
     packages=find_packages(exclude=("tests",)),
     include_package_data=True,
     install_requires=read_requirements(),
