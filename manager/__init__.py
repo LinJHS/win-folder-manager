@@ -1,3 +1,6 @@
-__version__ = "0.1.0"
+try:
+    from ._version import version as __version__
+except ImportError:
+    __version__ = "0.0.0+unknown"
 
 __all__ = ["app", "logic", "__version__"]
