@@ -19,4 +19,10 @@ setup(
     install_requires=read_requirements(),
     python_requires='>=3.8',
     entry_points={'console_scripts': ['win-folder-manager=manager.app:main']},
+    license='GPLv3',
+    classifiers=[
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Programming Language :: Python :: 3',
+        'Operating System :: Microsoft :: Windows',
+    ],
 )

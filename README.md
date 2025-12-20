@@ -3,7 +3,7 @@
 <div align="center">
 
 [![PyPI version](https://img.shields.io/pypi/v/win-folder-manager.svg?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/win-folder-manager/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/linjhs/manager.svg?style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/linjhs/manager)
+[![Docker Pulls](https://img.shields.io/docker/pulls/linjhs/win-folder-manager.svg?style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/linjhs/win-folder-manager)
 [![Build Status](https://github.com/LinJHS/win-folder-manager/actions/workflows/publish.yml/badge.svg)](https://github.com/LinJHS/win-folder-manager/actions)
 [![Python Versions](https://img.shields.io/pypi/pyversions/win-folder-manager.svg?style=flat-square&logo=python&logoColor=white)](https://pypi.org/project/win-folder-manager/)
 [![License](https://img.shields.io/github/license/LinJHS/win-folder-manager.svg?style=flat-square)](https://github.com/LinJHS/win-folder-manager/blob/main/LICENSE)
@@ -27,6 +27,14 @@
 - 📂 **快速操作**：直接从 UI 在资源管理器或 CMD 中打开文件夹。
 - 🚀 **Web 界面**：基于 Flask 的简单 UI，通过浏览器即可访问。
 - 💾 **持久化配置**：配置文件自动保存到 `%APPDATA%`，更新不丢失。
+
+## 📸 界面预览
+
+| 管理主页 | 属性编辑 |
+| :---: | :---: |
+| <img src="imgs/02-dashboard.png" width="100%"> | <img src="imgs/03-edit-attributes.png" width="100%"> |
+| **配置页面** | **资源管理器效果** |
+| <img src="imgs/01-configuration.png" width="100%"> | <img src="imgs/04-explorer-preview.png" width="100%"> |
 
 ## 📦 安装
 
@@ -99,7 +107,11 @@ win-folder-manager --no-browser
 您可以使用 Docker 运行 Win Folder Manager。
 
 ```bash
-docker run -d -p 6800:6800 -v /path/to/your/folders:/data linjhs/manager
+docker run -d \
+  -p 6800:6800 \
+  -v /path/to/your/folders:/data \
+  -v win-folder-manager-config:/root/.config/win-folder-manager \
+  linjhs/win-folder-manager
 ```
 
 > **注意**：本应用依赖 Windows 特有的命令 (`attrib`) 来设置文件夹属性（系统/隐藏/只读），这是 `desktop.ini` 自定义生效的必要条件。在 Linux 容器中运行可能会限制部分功能，除非用于特定环境或仅作查看用途。
@@ -121,4 +133,4 @@ docker run -d -p 6800:6800 -v /path/to/your/folders:/data linjhs/manager
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 详情请参阅 [LICENSE](LICENSE) 文件。
+本项目采用 GNU General Public License v3.0 许可证 - 详情请参阅 [LICENSE](LICENSE) 文件。

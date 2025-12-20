@@ -6,7 +6,19 @@ from flask import Flask, render_template, jsonify, request
 from .logic import FolderManager
 
 # Use APPDATA for persistent config storage
-APPDATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'win-folder-manager')
+def get_config_dir():
+    if os.name == 'nt':
+        # Windows: %APPDATA%\win-folder-manager
+        return os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'win-folder-manager')
+    else:
+        # Linux/Docker: ~/.config/win-folder-manager
+        # Respect XDG_CONFIG_HOME
+        xdg_config = os.environ.get('XDG_CONFIG_HOME')
+        if xdg_config:
+            return os.path.join(xdg_config, 'win-folder-manager')
+        return os.path.join(os.path.expanduser('~'), '.config', 'win-folder-manager')
+
+APPDATA_DIR = get_config_dir()
 if not os.path.exists(APPDATA_DIR):
     os.makedirs(APPDATA_DIR)
 
