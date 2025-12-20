@@ -13,3 +13,7 @@ build/
 # Packaging artifacts
 *.whl
 *.tar.gz
+manager/_version.py
+
+# Wiki
+win-folder-manager.wiki/

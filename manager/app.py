@@ -115,15 +115,31 @@ def batch_relative():
     return jsonify({"status": "success", "count": count})
 
 
-def open_browser():
-    webbrowser.open_new("http://127.0.0.1:6800")
+def open_browser(port):
+    webbrowser.open_new(f"http://127.0.0.1:{port}")
 
 
-def run(port=6800, debug=False, open_browser_on_start=True):
+def start_server(port=6800, debug=False, open_browser_on_start=True):
     if open_browser_on_start:
-        Timer(1, open_browser).start()
+        Timer(1, lambda: open_browser(port)).start()
     app.run(port=port, debug=debug)
 
 
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Win Folder Manager")
+    parser.add_argument("-p", "--port", type=int, default=6800, help="Port to run the server on (default: 6800)")
+    parser.add_argument("--debug", action="store_true", help="Run in debug mode")
+    parser.add_argument("--no-browser", action="store_true", help="Do not open browser on start")
+    
+    args = parser.parse_args()
+    
+    start_server(port=args.port, debug=args.debug, open_browser_on_start=not args.no_browser)
+
+
+# Alias for backward compatibility or direct import usage
+run = start_server
+
+
 if __name__ == '__main__':
-    run()
+    main()

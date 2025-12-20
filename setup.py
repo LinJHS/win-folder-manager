@@ -1,17 +1,5 @@
-import io
 import os
-import re
 from setuptools import setup, find_packages
-
-
-def read_version():
-    here = os.path.abspath(os.path.dirname(__file__))
-    with io.open(os.path.join(here, 'manager', '__init__.py'), 'r', encoding='utf-8') as f:
-        content = f.read()
-    m = re.search(r"^__version__ = ['\"]([^'\"]+)['\"]", content, re.M)
-    if m:
-        return m.group(1)
-    return '0.0.0'
 
 
 def read_requirements():
@@ -24,11 +12,11 @@ def read_requirements():
 
 setup(
     name='win-folder-manager',
-    version=read_version(),
+    use_scm_version=True,
     description='Windows desktop.ini folder manager web UI',
     packages=find_packages(exclude=("tests",)),
     include_package_data=True,
     install_requires=read_requirements(),
     python_requires='>=3.8',
-    entry_points={'console_scripts': ['win-folder-manager=manager.app:run']},
+    entry_points={'console_scripts': ['win-folder-manager=manager.app:main']},
 )

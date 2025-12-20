@@ -10,7 +10,7 @@
 
 **A lightweight, web-based manager for Windows folder customization.**
 
-[中文文档](README.md) | [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Docker](#-docker-support) • [Development](#-development)
+[中文文档](README.md) | [Wiki](https://github.com/LinJHS/win-folder-manager/wiki) | [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Docker](#-docker-support) • [Development](#-development)
 
 </div>
 
@@ -59,6 +59,24 @@ python -m manager
 ```
 
 The application will start a local web server (default: `http://127.0.0.1:6800`) and automatically open your default browser.
+
+### Command Line Options
+
+You can customize the startup behavior with the following arguments:
+
+- `-p`, `--port`: Specify the server port (default: 6800)
+- `--no-browser`: Do not open the browser automatically on start
+- `--debug`: Run in Flask debug mode
+
+Examples:
+
+```bash
+# Run on port 9000
+win-folder-manager -p 9000
+
+# Start server only, without opening browser
+win-folder-manager --no-browser
+```
 
 ### Configuration
 

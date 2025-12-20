@@ -10,7 +10,7 @@
 
 **一个轻量级的、基于 Web 的 Windows 文件夹自定义工具（desktop.ini 管理器）。**
 
-[English Version](README_EN.md) | [功能特性](#-功能特性) • [安装](#-安装) • [使用](#-使用) • [Docker](#-docker-支持) • [开发](#-开发)
+[English Version](README_EN.md) | [Wiki](https://github.com/LinJHS/win-folder-manager/wiki) | [功能特性](#-功能特性) • [安装](#-安装) • [使用](#-使用) • [Docker](#-docker-支持) • [开发](#-开发)
 
 </div>
 
@@ -59,6 +59,24 @@ python -m manager
 ```
 
 程序将启动一个本地 Web 服务器（默认端口：`6800`）并自动打开您的默认浏览器。
+
+### 命令行选项
+
+您可以使用以下参数自定义启动行为：
+
+- `-p`, `--port`: 指定服务器端口 (默认: 6800)
+- `--no-browser`: 启动时不自动打开浏览器
+- `--debug`: 开启 Flask 调试模式
+
+示例：
+
+```bash
+# 在端口 9000 启动
+win-folder-manager -p 9000
+
+# 仅启动服务器，不打开浏览器
+win-folder-manager --no-browser
+```
 
 ### 配置
 
