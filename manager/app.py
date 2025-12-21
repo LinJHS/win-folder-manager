@@ -59,6 +59,38 @@ def handle_config():
     return jsonify(load_config())
 
 
+@app.route('/api/select_folder', methods=['POST'])
+def select_folder_dialog():
+    if os.name != 'nt':
+        return jsonify({"status": "error", "msg": "Folder selection is only supported on Windows."})
+
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except ImportError:
+        return jsonify({"status": "error", "msg": "Tkinter module not found. Please ensure Python is installed with tcl/tk support."})
+
+    try:
+        # Create a hidden root window
+        root = tk.Tk()
+        root.withdraw() # Hide the main window
+        root.attributes('-topmost', True) # Make it appear on top
+        
+        # Open directory picker
+        folder_selected = filedialog.askdirectory()
+        
+        root.destroy()
+        
+        if folder_selected:
+            # Normalize path separator for Windows
+            path = os.path.normpath(folder_selected)
+            return jsonify({"status": "success", "path": path})
+        else:
+            return jsonify({"status": "cancel"})
+    except Exception as e:
+        return jsonify({"status": "error", "msg": str(e)})
+
+
 @app.route('/api/folders')
 def get_folders():
     config = load_config()

@@ -151,7 +151,12 @@
                         </div>
                         <div class="mb-4">
                             <label class="form-label fw-bold">根目录路径</label>
-                            <input type="text" class="form-control" v-model="config.root_path" placeholder="例如: D:\MyData">
+                            <div class="input-group">
+                                <input type="text" class="form-control" v-model="config.root_path" placeholder="例如: D:\MyData">
+                                <button class="btn btn-outline-secondary" type="button" @click="selectFolder">
+                                    <i class="fa-regular fa-folder-open"></i> 选择
+                                </button>
+                            </div>
                         </div>
                         
                         <label class="form-label fw-bold">图标库管理</label>
@@ -295,6 +300,18 @@
                 },
                 removeIcon(index) {
                     this.config.icons.splice(index, 1);
+                },
+                async selectFolder() {
+                    try {
+                        const res = await axios.post('/api/select_folder');
+                        if (res.data.status === 'success' && res.data.path) {
+                            this.config.root_path = res.data.path;
+                        } else if (res.data.status === 'error') {
+                            alert('无法打开文件夹选择器: ' + res.data.msg);
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
                 },
                 showConfigModal() {
                     this.modals.config.show();
