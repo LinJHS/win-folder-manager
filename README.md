@@ -1,6 +1,8 @@
-# Win Folder Manager
-
 <div align="center">
+
+<img src="imgs/Logo-Text.jpg" width="100%" alt="Win Folder Manager">
+
+<br>
 
 [![PyPI version](https://img.shields.io/pypi/v/win-folder-manager.svg?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/win-folder-manager/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/win-folder-manager.svg?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/win-folder-manager/)
