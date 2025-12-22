@@ -39,6 +39,12 @@ STATIC_FOLDER = os.path.join(BASE_DIR, 'static')
 
 app = Flask(__name__, template_folder=TEMPLATE_FOLDER, static_folder=STATIC_FOLDER)
 
+# Try to import version
+try:
+    from ._version import version as __version__
+except ImportError:
+    __version__ = "0.0.0+unknown"
+
 # 初始化逻辑类
 folder_logic = FolderManager(CONFIG_FILE)
 
@@ -57,7 +63,7 @@ def save_config(data):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', version=__version__)
 
 
 @app.route('/api/config', methods=['GET', 'POST'])

@@ -45,13 +45,21 @@
 
 ## 📦 安装
 
-### 通过 PyPI 安装 (推荐)
+### 方式 1: 通过 GitHub Releases 下载 (推荐)
+
+这是最简单的使用方式，无需安装 Python 环境。
+
+1.  访问 [Releases 页面](https://github.com/LinJHS/win-folder-manager/releases)。
+2.  下载最新的 `WinFolderManager.exe` 文件。
+3.  双击运行即可。
+
+### 方式 2: 通过 PyPI 安装 (推荐)
 
 ```bash
 pip install win-folder-manager
 ```
 
-### 通过源码安装
+### 方式 3: 通过源码安装
 
 ```bash
 git clone https://github.com/LinJHS/win-folder-manager.git
