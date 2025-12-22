@@ -9,6 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python for version generation
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Generate version file
+        run: |
+          pip install setuptools_scm
+          python -m setuptools_scm
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -64,6 +76,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -95,6 +109,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -106,6 +122,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
+          pip install setuptools_scm
+          python -m setuptools_scm
 
       - name: Build EXE with PyInstaller
         run: |
