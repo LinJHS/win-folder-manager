@@ -117,7 +117,9 @@ win-folder-manager --no-browser
 
 您可以在 Web 界面中直接配置需要扫描管理的根目录路径。
 
-## 🐳 Docker 支持
+## 🐳 Docker 支持 (不推荐)
+
+> **⚠️ 警告**：本应用的核心功能（修改文件夹图标和属性）严重依赖 Windows 系统 API 和文件系统特性（如 `attrib` 命令）。在 Docker（Linux 容器）中运行将导致**核心功能无法使用**，仅能作为文件浏览器使用。除非您非常清楚自己在做什么，否则**强烈建议在 Windows 原生环境下运行**。
 
 您可以使用 Docker 运行 Win Folder Manager。
 
@@ -128,8 +130,6 @@ docker run -d \
   -v win-folder-manager-config:/root/.config/win-folder-manager \
   linjhs/win-folder-manager
 ```
-
-> **注意**：本应用依赖 Windows 特有的命令 (`attrib`) 来设置文件夹属性（系统/隐藏/只读），这是 `desktop.ini` 自定义生效的必要条件。在 Linux 容器中运行可能会限制部分功能，除非用于特定环境或仅作查看用途。
 
 ## 🛠️ 开发
 

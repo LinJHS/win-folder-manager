@@ -117,7 +117,9 @@ The configuration file is stored at:
 
 You can configure the root path to scan for folders directly in the Web UI.
 
-## 🐳 Docker Support
+## 🐳 Docker Support (Not Recommended)
+
+> **⚠️ Warning**: The core functionality of this application (modifying folder icons and attributes) relies heavily on Windows System APIs and file system features (like the `attrib` command). Running in Docker (Linux container) will result in **core features being unavailable**, serving only as a file browser. Unless you know exactly what you are doing, it is **strongly recommended to run natively on Windows**.
 
 You can run Win Folder Manager using Docker.
 
@@ -128,8 +130,6 @@ docker run -d \
   -v win-folder-manager-config:/root/.config/win-folder-manager \
   linjhs/win-folder-manager
 ```
-
-> **Note**: This application relies on Windows-specific commands (`attrib`) to set folder attributes (System/Hidden/ReadOnly) which are required for `desktop.ini` customizations to take effect. Running this in a Linux container may limit functionality unless used in a specific environment or for viewing purposes.
 
 ## 🛠️ Development
 
