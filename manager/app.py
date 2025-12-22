@@ -5,6 +5,8 @@ from threading import Timer
 from flask import Flask, render_template, jsonify, request
 from .logic import FolderManager
 
+import sys
+
 # Use APPDATA for persistent config storage
 def get_config_dir():
     if os.name == 'nt':
@@ -24,10 +26,18 @@ if not os.path.exists(APPDATA_DIR):
 
 CONFIG_FILE = os.path.join(APPDATA_DIR, 'config.json')
 
-# Templates are now inside the package
-TEMPLATE_FOLDER = os.path.join(os.path.dirname(__file__), 'templates')
+# Define paths for templates and static files
+if getattr(sys, 'frozen', False):
+    # Running in PyInstaller bundle
+    BASE_DIR = os.path.join(sys._MEIPASS, 'manager')
+else:
+    # Running in normal Python environment
+    BASE_DIR = os.path.dirname(__file__)
 
-app = Flask(__name__, template_folder=TEMPLATE_FOLDER)
+TEMPLATE_FOLDER = os.path.join(BASE_DIR, 'templates')
+STATIC_FOLDER = os.path.join(BASE_DIR, 'static')
+
+app = Flask(__name__, template_folder=TEMPLATE_FOLDER, static_folder=STATIC_FOLDER)
 
 # 初始化逻辑类
 folder_logic = FolderManager(CONFIG_FILE)
@@ -74,6 +84,12 @@ def select_folder_dialog():
         # Create a hidden root window
         root = tk.Tk()
         root.withdraw() # Hide the main window
+
+        # Set custom icon if exists
+        icon_path = os.path.join(STATIC_FOLDER, 'favicon.ico')
+        if os.path.exists(icon_path):
+            root.iconbitmap(icon_path)
+
         root.attributes('-topmost', True) # Make it appear on top
         
         # Open directory picker
