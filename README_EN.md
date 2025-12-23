@@ -26,6 +26,7 @@
 - 🖼️ **Custom Icons**: Easily set folder icons (supports absolute and relative paths).
 - 🏷️ **Folder Aliases**: Rename folders visually in Explorer without changing the actual directory name.
 - ℹ️ **Info Tips**: Add custom hover text descriptions to folders.
+- 🤖 **AI Auto-naming**: Integrate with various AI models (e.g., OpenAI, DeepSeek) to automatically generate Emoji icons and aliases based on folder names.
 - 🔄 **Batch Operations**: Convert absolute icon paths to relative paths in batch for portability.
 - 📂 **Quick Actions**: Open folders in Explorer or CMD directly from the UI.
 - 🚀 **Web Interface**: Simple Flask-based UI accessible from your browser.

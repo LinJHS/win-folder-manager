@@ -13,6 +13,8 @@
         .folder-row:hover { background-color: #e9ecef; }
         .icon-preview { width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 8px; }
         .badge-soft { background-color: #e7f1ff; color: #0d6efd; border: 1px solid #cff4fc;}
+        .btn-ai { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: white !important; border: none; }
+        .btn-ai:hover { background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%); color: white !important; }
         /* 增加 loading 遮罩层样式 */
         [v-cloak] { display: none; }
     </style>
@@ -38,6 +40,11 @@
         <div class="card shadow-sm mb-4">
             <div class="card-body py-2">
                 <div class="d-flex gap-2">
+                    <button v-if="config.ai_config?.enabled" class="btn btn-ai btn-sm" @click="batchAiGenerate" :disabled="batchAiGenerating">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span v-if="batchAiGenerating">批量生成中...</span>
+                        <span v-else>AI 批量生成</span>
+                    </button>
                     <button class="btn btn-warning btn-sm" @click="batchRelativeToAll">
                         <i class="fa-solid fa-link"></i> 全部转为相对路径
                     </button>
@@ -79,6 +86,13 @@
                             </td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
+                                    <button v-if="config.ai_config?.enabled" class="btn btn-ai"
+                                            @click="aiQuickGenerate(folder)"
+                                            :disabled="aiGenerating[folder.path]">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                        <span v-if="aiGenerating[folder.path]">生成中...</span>
+                                        <span v-else>AI 生成</span>
+                                    </button>
                                     <button class="btn btn-primary" @click="editFolder(folder)">
                                         <i class="fa-solid fa-pen"></i> 编辑
                                     </button>
@@ -148,10 +162,11 @@
                     </div>
                     <div class="modal-body">
                         <div class="alert alert-info" v-if="!config.root_path">
-                            <i class="fa-solid fa-circle-info"></i> 初次使用，请设置需要管理的<b>根目录路径</b>。
+                            <i class="fa-solid fa-circle-info"></i> 初次使用，请设置需要管理的<b>根目录路径</b>（必填）。
+                            <div class="mt-1 small">图标库和 AI 功能均为选填项，可稍后配置。</div>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label fw-bold">根目录路径</label>
+                            <label class="form-label fw-bold">根目录路径 <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <input type="text" class="form-control" v-model="config.root_path" placeholder="例如: D:\MyData">
                                 <button class="btn btn-outline-secondary" type="button" @click="selectFolder">
@@ -159,8 +174,45 @@
                                 </button>
                             </div>
                         </div>
+
+                        <div class="mb-4" v-if="config.ai_config?.enabled">
+                            <label class="form-label fw-bold">Emoji 缓存模式</label>
+                            <div class="d-flex gap-3 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="emojiMode" id="modeGlobal" value="global" v-model="config.emoji_save_mode">
+                                    <label class="form-check-label" for="modeGlobal">全局指定目录 (Global)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="emojiMode" id="modeRelative" value="relative" v-model="config.emoji_save_mode">
+                                    <label class="form-check-label" for="modeRelative">根目录内相对路径 (Root Relative)</label>
+                                </div>
+                            </div>
+
+                            <!-- Global Mode Input -->
+                            <div class="input-group" v-if="config.emoji_save_mode === 'global'">
+                                <input type="text" class="form-control" v-model="config.emoji_global_dir" placeholder="例如: .../emoji_cache">
+                                <button class="btn btn-outline-secondary" type="button" @click="selectEmojiCacheFolder">
+                                    <i class="fa-regular fa-folder-open"></i> 选择
+                                </button>
+                                <button class="btn btn-outline-secondary" type="button" @click="openPath(config.emoji_global_dir, 'explorer')" title="打开文件夹">
+                                    <i class="fa-solid fa-folder"></i>
+                                </button>
+                            </div>
+                            <div class="form-text text-muted" v-if="config.emoji_save_mode === 'global'">
+                                所有项目的图标都将保存在此统一目录中，不受根目录切换影响。
+                            </div>
+
+                            <!-- Relative Mode Input -->
+                            <div class="input-group" v-if="config.emoji_save_mode === 'relative'">
+                                <span class="input-group-text">[[ config.root_path || '当前根目录' ]]\</span>
+                                <input type="text" class="form-control" v-model="config.emoji_relative_name" placeholder=".emoji_cache">
+                            </div>
+                            <div class="form-text text-muted" v-if="config.emoji_save_mode === 'relative'">
+                                图标将保存在当前管理的根目录下的指定子文件夹中。切换根目录时，缓存位置也会随之改变。
+                            </div>
+                        </div>
                         
-                        <label class="form-label fw-bold">图标库管理</label>
+                        <label class="form-label fw-bold">图标库管理 <span class="fw-normal text-muted small">（选填）</span></label>
                         <table class="table table-bordered table-sm">
                             <thead>
                                 <tr>
@@ -178,6 +230,77 @@
                             </tbody>
                         </table>
                         <button class="btn btn-outline-primary btn-sm" @click="addIcon">+ 添加新图标</button>
+
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <label class="form-label fw-bold mb-0">
+                                <i class="fa-solid fa-robot text-primary"></i> AI 自动命名配置
+                                <span class="fw-normal text-muted small" v-if="!config.ai_config.enabled">（选填）</span>
+                            </label>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" v-model="config.ai_config.enabled" id="aiEnabled">
+                                <label class="form-check-label" for="aiEnabled">启用功能</label>
+                            </div>
+                        </div>
+
+                        <div v-if="config.ai_config.enabled" class="bg-light p-3 rounded border">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted">选择提供商 (Provider)</label>
+                                <div class="d-flex gap-2">
+                                    <select class="form-select" v-model="config.ai_config.active_provider" :class="{'is-invalid': !config.ai_config.providers || config.ai_config.providers.length === 0}">
+                                        <option v-for="p in config.ai_config.providers" :value="p.name">[[ p.name ]]</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary" @click="addProvider" title="添加新提供商">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" 
+                                            @click="removeProvider" 
+                                            :disabled="!config.ai_config.providers || config.ai_config.providers.length <= 1"
+                                            title="删除当前提供商">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback" v-if="!config.ai_config.providers || config.ai_config.providers.length === 0">
+                                    请添加至少一个 AI 提供商配置。
+                                </div>
+                            </div>
+
+                            <div v-if="currentProvider">
+                                <div class="mb-3">
+                                    <label class="form-label">API Base Address</label>
+                                    <input type="text" class="form-control" v-model="currentProvider.api_base" placeholder="https://api.openai.com/v1">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">API Key</label>
+                                        <div class="input-group">
+                                            <input :type="showApiKey ? 'text' : 'password'" class="form-control" v-model="currentProvider.api_key" placeholder="sk-...">
+                                            <button class="btn btn-outline-secondary" type="button" @click="showApiKey = !showApiKey">
+                                                <i :class="showApiKey ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">模型 (Model)</label>
+                                        <div class="input-group">
+                                            <select class="form-select" v-model="currentProvider.model">
+                                                <option v-for="m in currentProvider.models" :value="m">[[ m ]]</option>
+                                            </select>
+                                            <button class="btn btn-outline-secondary" @click="addModel" title="添加模型">
+                                                <i class="fa-solid fa-plus"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" 
+                                                    @click="removeModel" 
+                                                    :disabled="!currentProvider.models || currentProvider.models.length === 0"
+                                                    title="删除当前模型">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" @click="saveConfig">保存设置</button>
@@ -186,8 +309,25 @@
             </div>
         </div>
 
+        <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+            <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                    <i :class="toast.icon" class="me-2"></i>
+                    <strong class="me-auto">[[ toast.title ]]</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body" style="white-space: pre-wrap;">
+                    [[ toast.message ]]
+                </div>
+            </div>
+        </div>
+
         <footer class="text-center text-muted mt-5 mb-3 small">
             Win Folder Manager v{{ version }} &copy; 2025
+            <span class="mx-2">|</span>
+            <a href="https://github.com/LinJHS/win-folder-manager" target="_blank" class="text-muted text-decoration-none">
+                <i class="fa-brands fa-github"></i> GitHub
+            </a>
         </footer>
 
     </div>
@@ -206,7 +346,18 @@
             },
             data() {
                 return {
-                    config: { root_path: '', icons: [] },
+                    config: {
+                        root_path: '',
+                        emoji_save_mode: 'global', // 'global' or 'relative'
+                        emoji_global_dir: '',
+                        emoji_relative_name: '.emoji_cache',
+                        icons: [],
+                        ai_config: {  // AI 配置
+                            enabled: false,
+                            active_provider: 'SiliconFlow',
+                            providers: []
+                        }
+                    },
                     folders: [],
                     currentFolder: {},
                     editForm: {
@@ -219,13 +370,25 @@
                     modals: {
                         edit: null,
                         config: null
-                    }
+                    },
+                    showApiKey: false,      // 控制 API Key 显示/隐藏
+                    aiGenerating: {},       // 记录每个文件夹的 AI 生成状态
+                    batchAiGenerating: false, // 批量 AI 生成状态
+                    toast: { title: '', message: '', icon: '' },
+                    toastInstance: null
+                }
+            },
+            computed: {
+                currentProvider() {
+                    if (!this.config.ai_config?.providers) return null;
+                    return this.config.ai_config.providers.find(p => p.name === this.config.ai_config.active_provider);
                 }
             },
             mounted() {
                 // Initialize Bootstrap Modals
                 this.modals.edit = new bootstrap.Modal(document.getElementById('editModal'));
                 this.modals.config = new bootstrap.Modal(document.getElementById('configModal'));
+                this.toastInstance = new bootstrap.Toast(document.getElementById('liveToast'));
                 
                 this.loadConfig().then(() => {
                     if (!this.config.root_path) {
@@ -240,6 +403,14 @@
                 async loadConfig() {
                     const res = await axios.get('/api/config');
                     this.config = res.data;
+                    
+                    // Ensure AI config structure
+                    if (!this.config.ai_config) {
+                        this.config.ai_config = { enabled: false, providers: [], active_provider: '' };
+                    }
+                    if (!this.config.ai_config.providers) {
+                        this.config.ai_config.providers = [];
+                    }
                 },
                 async saveConfig() {
                     await axios.post('/api/config', this.config);
@@ -295,7 +466,7 @@
                 async batchRelativeToAll() {
                     if(!confirm('确定要将所有文件夹配置转换为相对路径吗？')) return;
                     const res = await axios.post('/api/batch_relative');
-                    alert(`已处理 ${res.data.count} 个文件夹`);
+                    this.showToast(`已处理 ${res.data.count} 个文件夹`, 'success');
                     this.refreshFolders();
                 },
                 
@@ -306,13 +477,77 @@
                 removeIcon(index) {
                     this.config.icons.splice(index, 1);
                 },
+
+                // AI Provider Management
+                addProvider() {
+                    const name = prompt("请输入提供商名称 (例如: LocalLLM):");
+                    if (!name) return;
+                    if (this.config.ai_config.providers.find(p => p.name === name)) {
+                        this.showToast("该名称已存在", "error");
+                        return;
+                    }
+                    this.config.ai_config.providers.push({
+                        name: name,
+                        api_base: "",
+                        api_key: "",
+                        model: "",
+                        models: []
+                    });
+                    this.config.ai_config.active_provider = name;
+                },
+                removeProvider() {
+                    if (!confirm("确定要删除当前提供商配置吗？")) return;
+                    const idx = this.config.ai_config.providers.findIndex(p => p.name === this.config.ai_config.active_provider);
+                    if (idx > -1) {
+                        this.config.ai_config.providers.splice(idx, 1);
+                        // Select first available
+                        if (this.config.ai_config.providers.length > 0) {
+                            this.config.ai_config.active_provider = this.config.ai_config.providers[0].name;
+                        }
+                    }
+                },
+                addModel() {
+                    if (!this.currentProvider) return;
+                    const model = prompt("请输入模型名称 (例如: llama3):");
+                    if (model) {
+                        if (!this.currentProvider.models) this.currentProvider.models = [];
+                        if (!this.currentProvider.models.includes(model)) {
+                            this.currentProvider.models.push(model);
+                            this.currentProvider.model = model;
+                        }
+                    }
+                },
+                removeModel() {
+                    if (!this.currentProvider || !this.currentProvider.model) return;
+                    if (!confirm(`确定要删除模型 ${this.currentProvider.model} 吗？`)) return;
+                    
+                    const idx = this.currentProvider.models.indexOf(this.currentProvider.model);
+                    if (idx > -1) {
+                        this.currentProvider.models.splice(idx, 1);
+                        // Select another model if available
+                        this.currentProvider.model = this.currentProvider.models.length > 0 ? this.currentProvider.models[0] : '';
+                    }
+                },
+
                 async selectFolder() {
                     try {
                         const res = await axios.post('/api/select_folder');
                         if (res.data.status === 'success' && res.data.path) {
                             this.config.root_path = res.data.path;
                         } else if (res.data.status === 'error') {
-                            alert('无法打开文件夹选择器: ' + res.data.msg);
+                            this.showToast('无法打开文件夹选择器: ' + res.data.msg, 'error');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                },
+                async selectEmojiCacheFolder() {
+                    try {
+                        const res = await axios.post('/api/select_folder');
+                        if (res.data.status === 'success' && res.data.path) {
+                            this.config.emoji_global_dir = res.data.path;
+                        } else if (res.data.status === 'error') {
+                            this.showToast('无法打开文件夹选择器: ' + res.data.msg, 'error');
                         }
                     } catch (e) {
                         console.error(e);
@@ -323,6 +558,21 @@
                 },
                 
                 // Helpers
+                showToast(message, type = 'info') {
+                    this.toast.message = message;
+                    if (type === 'success') {
+                        this.toast.title = '成功';
+                        this.toast.icon = 'fa-solid fa-check-circle text-success';
+                    } else if (type === 'error') {
+                        this.toast.title = '错误';
+                        this.toast.icon = 'fa-solid fa-circle-exclamation text-danger';
+                    } else {
+                        this.toast.title = '提示';
+                        this.toast.icon = 'fa-solid fa-info-circle text-info';
+                    }
+                    this.toastInstance.show();
+                },
+
                 getIconAlias(path) {
                     if (!path) return '';
                     
@@ -350,6 +600,93 @@
                     });
                     
                     return found ? found.name : '';
+                },
+
+                // AI 生成方法
+                async aiQuickGenerate(folder) {
+                    // 检查本地配置是否已启用，不再检查 Key (后端检查)
+                    if (!this.config.ai_config?.enabled) {
+                        this.showToast('请先在设置中启用 AI 功能', 'error');
+                        return;
+                    }
+
+                    // Vue 3 直接赋值即可
+                    this.aiGenerating[folder.path] = true;
+                    try {
+                        // 不再发送 ai_config，后端使用存储的配置
+                        const res = await axios.post('/api/ai_generate', {
+                            folder_name: folder.name
+                        });
+
+                        if (res.data.status === 'success') {
+                            const iconRes = await axios.post('/api/emoji_to_ico', {
+                                emoji: res.data.emoji,
+                                folder_path: folder.path
+                            });
+
+                            await axios.post('/api/update', {
+                                path: folder.path,
+                                alias: res.data.alias,
+                                infotip: res.data.infotip,
+                                icon_path: iconRes.data.ico_path,
+                                use_relative: true
+                            });
+
+                            await this.refreshFolders();
+                            this.showToast(`已生成: ${res.data.alias}`, 'success');
+                        } else {
+                            this.showToast('AI 生成失败: ' + res.data.msg, 'error');
+                        }
+                    } catch (e) {
+                        this.showToast('请求失败: ' + (e.response?.data?.msg || e.message), 'error');
+                    } finally {
+                        this.aiGenerating[folder.path] = false;
+                    }
+                },
+
+                async batchAiGenerate() {
+                    if (!this.config.ai_config?.enabled) {
+                        this.showToast('请先在设置中启用 AI 功能', 'error');
+                        return;
+                    }
+
+                    if (!confirm('确定要 AI 批量生成所有未命名文件夹吗？')) return;
+
+                    this.batchAiGenerating = true;
+                    try {
+                        // 不再发送 ai_config
+                        const res = await axios.post('/api/batch_ai_generate', {
+                            batch_size: 5
+                        });
+
+                        if (res.data.status === 'success') {
+                            let msg = `已处理 ${res.data.count} 个文件夹`;
+                            if (res.data.errors.length > 0) {
+                                msg += ` (失败 ${res.data.errors.length} 个):\n`;
+                                // 显示前 3 个错误
+                                msg += res.data.errors.slice(0, 3).join('\n');
+                                if (res.data.errors.length > 3) {
+                                    msg += `\n...以及其他 ${res.data.errors.length - 3} 个错误`;
+                                }
+                            }
+                            
+                            let type = 'success';
+                            if (res.data.count === 0 && res.data.errors.length > 0) {
+                                type = 'error';
+                            } else if (res.data.errors.length > 0) {
+                                type = 'warning';
+                            }
+
+                            this.showToast(msg, type);
+                            await this.refreshFolders();
+                        } else {
+                            this.showToast('批量生成失败: ' + res.data.msg, 'error');
+                        }
+                    } catch (e) {
+                        this.showToast('请求失败: ' + (e.response?.data?.msg || e.message), 'error');
+                    } finally {
+                        this.batchAiGenerating = false;
+                    }
                 }
             }
         }).mount('#app');
