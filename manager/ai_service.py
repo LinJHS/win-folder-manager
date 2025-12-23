@@ -80,7 +80,7 @@ class AINamingService:
             "messages": [
                 {"role": "user", "content": self._build_prompt(folder_name)}
             ],
-            "temperature": 0.7,
+            "temperature": 0.3,
             "max_tokens": 2000
         }
 
@@ -89,9 +89,6 @@ class AINamingService:
             response.raise_for_status()
 
             result = response.json()
-            
-            # 调试日志：打印完整 API 响应
-            print(f"API Response: {json.dumps(result, ensure_ascii=False)}")
 
             if 'choices' not in result or len(result['choices']) == 0:
                 raise Exception("API 返回了空的选择列表 (choices is empty)")
@@ -138,7 +135,5 @@ class AINamingService:
 
         except requests.exceptions.RequestException as e:
             raise Exception(f"API 请求失败: {str(e)}")
-        except json.JSONDecodeError:
-            raise Exception("AI 返回的不是有效 JSON")
         except KeyError as e:
             raise Exception(f"AI 响应格式异常: {str(e)}")

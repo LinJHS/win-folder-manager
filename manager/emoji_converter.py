@@ -52,8 +52,8 @@ class EmojiConverter:
         Returns:
             PIL.Image 对象
         """
-        twicode = self._emoji_to_twicode(emoji)
-        url = f"{self.twemoji_base}{twicode}.png"
+        twemoji_filename = self._emoji_to_twicode(emoji)
+        url = f"{self.twemoji_base}{twemoji_filename}.png"
 
         try:
             response = requests.get(url, timeout=10)
@@ -68,13 +68,8 @@ class EmojiConverter:
 
             return img
         except Exception as e:
-            print(f"下载 Emoji 失败: {e}, 使用降级方案")
-            # 降级方案：绘制一个简单的彩色图标
-            img = Image.new('RGBA', self.ico_size, (0, 0, 0, 0))
-            from PIL import ImageDraw
-            draw = ImageDraw.Draw(img)
-            draw.ellipse([30, 30, 226, 226], fill=(100, 150, 255, 255))
-            return img
+            print(f"下载 Emoji 失败: {e}")
+            raise Exception(f"无法下载 Emoji 图片: {e}")
 
     def convert(self, emoji, folder_path):
         """

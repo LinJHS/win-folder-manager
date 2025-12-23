@@ -52,7 +52,7 @@ folder_logic = FolderManager(CONFIG_FILE)
 
 def load_config():
     default_ai_config = {
-        "enabled": True,
+        "enabled": False,
         "active_provider": "SiliconFlow",
         "providers": [
             {
@@ -374,7 +374,7 @@ def batch_ai_generate():
     
     # 速率限制配置
     batch_size = data.get('batch_size', 5)      # 默认每批处理 5 个
-    delay = data.get('delay', 2.0)              # 默认间隔 2 秒
+    # delay = data.get('delay', 2.0)            # 不再使用固定延迟
 
     try:
         config = load_config()
@@ -422,31 +422,42 @@ def batch_ai_generate():
         # 应用批次限制
         targets = targets[:batch_size]
 
-        for i, folder in enumerate(targets):
-            try:
-                # 请求节流：除第一个请求外，每次请求前等待
-                if i > 0:
-                    time.sleep(delay)
+        for folder in targets:
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    result = service.generate(folder['name'])
+                    if result['status'] == 'success':
+                        ico_path = converter.convert(result['emoji'], folder['path'])
+                        folder_logic.update_folder(
+                            folder['path'],
+                            result['alias'],
+                            ico_path,
+                            result.get('infotip', ''),
+                            use_relative=True
+                        )
+                        count += 1
+                    break # 成功则跳出重试循环
+                except Exception as e:
+                    err_msg = str(e).lower()
+                    # 检查是否为速率限制错误 (429, rate limit, too many requests)
+                    is_rate_limit = "429" in err_msg or "rate limit" in err_msg or "too many requests" in err_msg
                     
-                result = service.generate(folder['name'])
-                if result['status'] == 'success':
-                    ico_path = converter.convert(result['emoji'], folder['path'])
-                    folder_logic.update_folder(
-                        folder['path'],
-                        result['alias'],
-                        ico_path,
-                        result.get('infotip', ''),
-                        use_relative=True
-                    )
-                    count += 1
-            except Exception as e:
-                errors.append(f"{folder['name']}: {str(e)}")
+                    if is_rate_limit and attempt < max_retries - 1:
+                        # 指数退避: 1s, 2s, 4s...
+                        sleep_time = 2 ** attempt
+                        time.sleep(sleep_time)
+                        continue
+                    
+                    # 如果是最后一次尝试，或者不是速率限制错误，则记录错误
+                    if attempt == max_retries - 1:
+                        errors.append(f"{folder['name']}: {str(e)}")
 
         return jsonify({
             "status": "success",
             "count": count,
             "errors": errors,
-            "has_more": len([f for f in folders if not f.get('alias')]) > 0
+            "has_more": len([f for f in folders if not f.get('alias')]) > count
         })
     except Exception as e:
         return jsonify({"status": "error", "msg": str(e)}), 500

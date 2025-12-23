@@ -162,10 +162,11 @@
                     </div>
                     <div class="modal-body">
                         <div class="alert alert-info" v-if="!config.root_path">
-                            <i class="fa-solid fa-circle-info"></i> 初次使用，请设置需要管理的<b>根目录路径</b>。
+                            <i class="fa-solid fa-circle-info"></i> 初次使用，请设置需要管理的<b>根目录路径</b>（必填）。
+                            <div class="mt-1 small">图标库和 AI 功能均为选填项，可稍后配置。</div>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label fw-bold">根目录路径</label>
+                            <label class="form-label fw-bold">根目录路径 <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <input type="text" class="form-control" v-model="config.root_path" placeholder="例如: D:\MyData">
                                 <button class="btn btn-outline-secondary" type="button" @click="selectFolder">
@@ -211,7 +212,7 @@
                             </div>
                         </div>
                         
-                        <label class="form-label fw-bold">图标库管理</label>
+                        <label class="form-label fw-bold">图标库管理 <span class="fw-normal text-muted small">（选填）</span></label>
                         <table class="table table-bordered table-sm">
                             <thead>
                                 <tr>
@@ -235,6 +236,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <label class="form-label fw-bold mb-0">
                                 <i class="fa-solid fa-robot text-primary"></i> AI 自动命名配置
+                                <span class="fw-normal text-muted small" v-if="!config.ai_config.enabled">（选填）</span>
                             </label>
                             <div class="form-check form-switch mb-0">
                                 <input class="form-check-input" type="checkbox" v-model="config.ai_config.enabled" id="aiEnabled">
@@ -246,7 +248,7 @@
                             <div class="mb-3">
                                 <label class="form-label fw-bold small text-muted">选择提供商 (Provider)</label>
                                 <div class="d-flex gap-2">
-                                    <select class="form-select" v-model="config.ai_config.active_provider">
+                                    <select class="form-select" v-model="config.ai_config.active_provider" :class="{'is-invalid': !config.ai_config.providers || config.ai_config.providers.length === 0}">
                                         <option v-for="p in config.ai_config.providers" :value="p.name">[[ p.name ]]</option>
                                     </select>
                                     <button class="btn btn-outline-secondary" @click="addProvider" title="添加新提供商">
@@ -254,10 +256,13 @@
                                     </button>
                                     <button class="btn btn-outline-danger" 
                                             @click="removeProvider" 
-                                            :disabled="config.ai_config.providers.length <= 1"
+                                            :disabled="!config.ai_config.providers || config.ai_config.providers.length <= 1"
                                             title="删除当前提供商">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
+                                </div>
+                                <div class="invalid-feedback" v-if="!config.ai_config.providers || config.ai_config.providers.length === 0">
+                                    请添加至少一个 AI 提供商配置。
                                 </div>
                             </div>
 
@@ -311,7 +316,7 @@
                     <strong class="me-auto">[[ toast.title ]]</strong>
                     <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
-                <div class="toast-body">
+                <div class="toast-body" style="white-space: pre-wrap;">
                     [[ toast.message ]]
                 </div>
             </div>
@@ -319,6 +324,10 @@
 
         <footer class="text-center text-muted mt-5 mb-3 small">
             Win Folder Manager v{{ version }} &copy; 2025
+            <span class="mx-2">|</span>
+            <a href="https://github.com/LinJHS/win-folder-manager" target="_blank" class="text-muted text-decoration-none">
+                <i class="fa-brands fa-github"></i> GitHub
+            </a>
         </footer>
 
     </div>
@@ -345,9 +354,8 @@
                         icons: [],
                         ai_config: {  // AI 配置
                             enabled: false,
-                            api_base: 'https://api.openai.com/v1',
-                            api_key: '',
-                            model: 'gpt-3.5-turbo'
+                            active_provider: 'SiliconFlow',
+                            providers: []
                         }
                     },
                     folders: [],
@@ -395,6 +403,14 @@
                 async loadConfig() {
                     const res = await axios.get('/api/config');
                     this.config = res.data;
+                    
+                    // Ensure AI config structure
+                    if (!this.config.ai_config) {
+                        this.config.ai_config = { enabled: false, providers: [], active_provider: '' };
+                    }
+                    if (!this.config.ai_config.providers) {
+                        this.config.ai_config.providers = [];
+                    }
                 },
                 async saveConfig() {
                     await axios.post('/api/config', this.config);
@@ -640,16 +656,28 @@
                     try {
                         // 不再发送 ai_config
                         const res = await axios.post('/api/batch_ai_generate', {
-                            batch_size: 5,
-                            delay: 2.0
+                            batch_size: 5
                         });
 
                         if (res.data.status === 'success') {
-                            let msg = `成功处理 ${res.data.count} 个文件夹`;
+                            let msg = `已处理 ${res.data.count} 个文件夹`;
                             if (res.data.errors.length > 0) {
-                                msg += ` (失败 ${res.data.errors.length} 个)`;
+                                msg += ` (失败 ${res.data.errors.length} 个):\n`;
+                                // 显示前 3 个错误
+                                msg += res.data.errors.slice(0, 3).join('\n');
+                                if (res.data.errors.length > 3) {
+                                    msg += `\n...以及其他 ${res.data.errors.length - 3} 个错误`;
+                                }
                             }
-                            this.showToast(msg, res.data.errors.length > 0 ? 'warning' : 'success');
+                            
+                            let type = 'success';
+                            if (res.data.count === 0 && res.data.errors.length > 0) {
+                                type = 'error';
+                            } else if (res.data.errors.length > 0) {
+                                type = 'warning';
+                            }
+
+                            this.showToast(msg, type);
                             await this.refreshFolders();
                         } else {
                             this.showToast('批量生成失败: ' + res.data.msg, 'error');
