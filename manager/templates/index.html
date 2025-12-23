@@ -191,39 +191,36 @@
                         </table>
                         <button class="btn btn-outline-primary btn-sm" @click="addIcon">+ 添加新图标</button>
 
-                        <label class="form-label fw-bold mt-4">
-                            <i class="fa-solid fa-robot text-primary"></i> AI 自动命名配置
-                        </label>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" v-model="config.ai_config.enabled" id="aiEnabled">
-                            <label class="form-check-label" for="aiEnabled">
-                                启用 AI 自动生成功能
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <label class="form-label fw-bold mb-0">
+                                <i class="fa-solid fa-robot text-primary"></i> AI 自动命名配置
                             </label>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" v-model="config.ai_config.enabled" id="aiEnabled">
+                                <label class="form-check-label" for="aiEnabled">启用功能</label>
+                            </div>
                         </div>
 
-                        <div v-if="config.ai_config.enabled">
-                            <div class="row g-2">
-                                <div class="col-md-4">
-                                    <label class="form-label small text-muted">API Base</label>
-                                    <input type="text" class="form-control form-control-sm"
-                                           v-model="config.ai_config.api_base"
-                                           placeholder="https://api.openai.com/v1">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label small text-muted">API Key</label>
-                                    <div class="input-group input-group-sm">
-                                        <input :type="showApiKey ? 'text' : 'password'"
-                                               class="form-control"
-                                               v-model="config.ai_config.api_key"
-                                               placeholder="sk-xxxxxxxxxxxx">
-                                        <button class="btn btn-outline-secondary" @click="showApiKey = !showApiKey">
+                        <div v-if="config.ai_config.enabled" class="bg-light p-3 rounded border">
+                            <div class="mb-3">
+                                <label class="form-label">API Base Address</label>
+                                <input type="text" class="form-control" v-model="config.ai_config.api_base" placeholder="https://api.openai.com/v1">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">API Key</label>
+                                    <div class="input-group">
+                                        <input :type="showApiKey ? 'text' : 'password'" class="form-control" v-model="config.ai_config.api_key" placeholder="sk-...">
+                                        <button class="btn btn-outline-secondary" type="button" @click="showApiKey = !showApiKey">
                                             <i :class="showApiKey ? 'fa-eye-slash' : 'fa-eye'"></i>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label small text-muted">模型</label>
-                                    <select class="form-select form-select-sm" v-model="config.ai_config.model">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">模型 (Model)</label>
+                                    <select class="form-select" v-model="config.ai_config.model">
                                         <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                                         <option value="gpt-4">GPT-4</option>
                                         <option value="deepseek-chat">DeepSeek Chat</option>
