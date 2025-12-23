@@ -53,7 +53,7 @@ folder_logic = FolderManager(CONFIG_FILE)
 def load_config():
     default_ai_config = {
         "enabled": False,
-        "active_provider": "SiliconFlow",
+        "active_provider": "DeepSeek",
         "providers": [
             {
                 "name": "SiliconFlow",
