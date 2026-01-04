@@ -267,10 +267,24 @@ def convert_image_to_ico():
     try:
         config = load_config()
         
-        # Determine cache dir
-        # For library icons, we default to global cache if possible
-        cache_dir = config.get('emoji_global_dir')
+        # Determine cache dir based on save mode
+        # Prioritize parameters from request (UI state), fallback to saved config
+        mode = data.get('emoji_save_mode', config.get('emoji_save_mode', 'global'))
+        root = data.get('root_path', config.get('root_path', ''))
+        relative_name = data.get('emoji_relative_name', config.get('emoji_relative_name', '.emoji_cache'))
+        global_dir = data.get('emoji_global_dir', config.get('emoji_global_dir'))
+
+        cache_dir = None
+
+        if mode == 'relative':
+            if root:
+                cache_dir = os.path.join(root, relative_name)
+        
+        # Fallback to global if relative failed or mode is global
+        if not cache_dir:
+            cache_dir = global_dir
             
+        # Final fallback if global dir is missing in config
         if not cache_dir:
              cache_dir = os.path.join(get_config_dir(), 'icons')
              

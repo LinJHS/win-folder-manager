@@ -488,7 +488,14 @@
                             if (ext !== 'ico') {
                                 // Convert to ICO
                                 this.showToast('正在转换图片...', 'info');
-                                const convRes = await axios.post('/api/convert_to_ico', { source_path: path });
+                                const convRes = await axios.post('/api/convert_to_ico', { 
+                                    source_path: path,
+                                    // Pass current config state to ensure WYSIWYG behavior
+                                    emoji_save_mode: this.config.emoji_save_mode,
+                                    root_path: this.config.root_path,
+                                    emoji_relative_name: this.config.emoji_relative_name,
+                                    emoji_global_dir: this.config.emoji_global_dir
+                                });
                                 if (convRes.data.status === 'success') {
                                     finalPath = convRes.data.ico_path;
                                     this.showToast('转换成功', 'success');
