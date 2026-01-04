@@ -175,42 +175,7 @@
                             </div>
                         </div>
 
-                        <div class="mb-4" v-if="config.ai_config?.enabled">
-                            <label class="form-label fw-bold">Emoji 缓存模式</label>
-                            <div class="d-flex gap-3 mb-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="emojiMode" id="modeGlobal" value="global" v-model="config.emoji_save_mode">
-                                    <label class="form-check-label" for="modeGlobal">全局指定目录 (Global)</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="emojiMode" id="modeRelative" value="relative" v-model="config.emoji_save_mode">
-                                    <label class="form-check-label" for="modeRelative">根目录内相对路径 (Root Relative)</label>
-                                </div>
-                            </div>
 
-                            <!-- Global Mode Input -->
-                            <div class="input-group" v-if="config.emoji_save_mode === 'global'">
-                                <input type="text" class="form-control" v-model="config.emoji_global_dir" placeholder="例如: .../emoji_cache">
-                                <button class="btn btn-outline-secondary" type="button" @click="selectEmojiCacheFolder">
-                                    <i class="fa-regular fa-folder-open"></i> 选择
-                                </button>
-                                <button class="btn btn-outline-secondary" type="button" @click="openPath(config.emoji_global_dir, 'explorer')" title="打开文件夹">
-                                    <i class="fa-solid fa-folder"></i>
-                                </button>
-                            </div>
-                            <div class="form-text text-muted" v-if="config.emoji_save_mode === 'global'">
-                                所有项目的图标都将保存在此统一目录中，不受根目录切换影响。
-                            </div>
-
-                            <!-- Relative Mode Input -->
-                            <div class="input-group" v-if="config.emoji_save_mode === 'relative'">
-                                <span class="input-group-text">[[ config.root_path || '当前根目录' ]]\</span>
-                                <input type="text" class="form-control" v-model="config.emoji_relative_name" placeholder=".emoji_cache">
-                            </div>
-                            <div class="form-text text-muted" v-if="config.emoji_save_mode === 'relative'">
-                                图标将保存在当前管理的根目录下的指定子文件夹中。切换根目录时，缓存位置也会随之改变。
-                            </div>
-                        </div>
                         
                         <label class="form-label fw-bold">图标库管理 <span class="fw-normal text-muted small">（选填）</span></label>
                         <table class="table table-bordered table-sm">
@@ -230,6 +195,40 @@
                             </tbody>
                         </table>
                         <button class="btn btn-outline-primary btn-sm" @click="addIcon">+ 添加新图标</button>
+
+                        <div class="mt-4 mb-4">
+                            <label class="form-label fw-bold">图标缓存模式</label>
+                            <div class="d-flex gap-3 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="emojiMode" id="modeGlobal" value="global" v-model="config.emoji_save_mode">
+                                    <label class="form-check-label" for="modeGlobal">全局指定目录 (Global)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="emojiMode" id="modeRelative" value="relative" v-model="config.emoji_save_mode">
+                                    <label class="form-check-label" for="modeRelative">根目录内相对路径 (Root Relative)</label>
+                                </div>
+                            </div>
+
+                            <!-- Global Mode Input -->
+                            <div class="input-group" v-if="config.emoji_save_mode === 'global'">
+                                <input type="text" class="form-control" v-model="config.emoji_global_dir" placeholder="例如: .../emoji_cache">
+                                <button class="btn btn-outline-secondary" type="button" @click="selectEmojiCacheFolder">
+                                    <i class="fa-regular fa-folder-open"></i> 选择
+                                </button>
+                            </div>
+                            <div class="form-text text-muted" v-if="config.emoji_save_mode === 'global'">
+                                所有项目的图标都将保存在此统一目录中，不受根目录切换影响。
+                            </div>
+
+                            <!-- Relative Mode Input -->
+                            <div class="input-group" v-if="config.emoji_save_mode === 'relative'">
+                                <span class="input-group-text">[[ config.root_path || '当前根目录' ]]\</span>
+                                <input type="text" class="form-control" v-model="config.emoji_relative_name" placeholder=".emoji_cache">
+                            </div>
+                            <div class="form-text text-muted" v-if="config.emoji_save_mode === 'relative'">
+                                图标将保存在当前管理的根目录下的指定子文件夹中。切换根目录时，缓存位置也会随之改变。
+                            </div>
+                        </div>
 
                         <hr class="my-4">
                         
@@ -354,7 +353,7 @@
                         icons: [],
                         ai_config: {  // AI 配置
                             enabled: false,
-                            active_provider: 'DeepSeek',
+                            active_provider: 'SiliconFlow',
                             providers: []
                         }
                     },
@@ -471,8 +470,47 @@
                 },
                 
                 // Config Icon Management
-                addIcon() {
-                    this.config.icons.push({ name: '新图标', path: '', index: 0 });
+                async addIcon() {
+                    try {
+                        const res = await axios.post('/api/select_file');
+                        if (res.data.status === 'success' && res.data.path) {
+                            const path = res.data.path;
+                            const ext = path.split('.').pop().toLowerCase();
+                            
+                            let finalPath = path;
+                            // Use filename (without extension) as default name
+                            let name = path.split(/[\\/]/).pop().split('.').slice(0, -1).join('.');
+                            if (!name) name = '新图标';
+                            
+                            if (ext !== 'ico') {
+                                // Convert to ICO
+                                this.showToast('正在转换图片...', 'info');
+                                const convRes = await axios.post('/api/convert_to_ico', { 
+                                    source_path: path,
+                                    // Pass current config state to ensure WYSIWYG behavior
+                                    emoji_save_mode: this.config.emoji_save_mode,
+                                    root_path: this.config.root_path,
+                                    emoji_relative_name: this.config.emoji_relative_name,
+                                    emoji_global_dir: this.config.emoji_global_dir
+                                });
+                                if (convRes.data.status === 'success') {
+                                    finalPath = convRes.data.ico_path;
+                                    this.showToast('转换成功', 'success');
+                                } else {
+                                    this.showToast('转换失败: ' + convRes.data.msg, 'error');
+                                    return; 
+                                }
+                            }
+                            
+                            this.config.icons.push({ name: name, path: finalPath });
+                        } else {
+                            // Cancelled or error, fallback to empty row
+                             this.config.icons.push({ name: '新图标', path: '', index: 0 });
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        this.config.icons.push({ name: '新图标', path: '', index: 0 });
+                    }
                 },
                 removeIcon(index) {
                     this.config.icons.splice(index, 1);
