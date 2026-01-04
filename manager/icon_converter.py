@@ -99,6 +99,12 @@ class IconConverter:
         if not os.path.exists(source_path):
             raise FileNotFoundError(f"File not found: {source_path}")
 
+        # Validate file extension
+        valid_extensions = {'.png', '.jpg', '.jpeg', '.bmp', '.webp'}
+        ext = os.path.splitext(source_path)[1].lower()
+        if ext not in valid_extensions:
+            raise ValueError(f"Unsupported file type: {ext}. Supported types: {', '.join(valid_extensions)}")
+
         with open(source_path, "rb") as f:
             file_hash = hashlib.md5(f.read()).hexdigest()[:8]
             
@@ -112,7 +118,16 @@ class IconConverter:
             ico_path = os.path.join(base_dir, ico_filename)
 
         if not os.path.exists(ico_path):
-            img = Image.open(source_path)
-            self._save_ico(img, ico_path)
+            try:
+                with Image.open(source_path) as img:
+                    self._save_ico(img, ico_path)
+            except Exception as e:
+                # Clean up if partial file was created
+                if os.path.exists(ico_path):
+                    try:
+                        os.remove(ico_path)
+                    except:
+                        pass
+                raise ValueError(f"Invalid image file or conversion failed: {e}")
             
         return ico_path
