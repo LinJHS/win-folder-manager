@@ -215,9 +215,6 @@
                                 <button class="btn btn-outline-secondary" type="button" @click="selectEmojiCacheFolder">
                                     <i class="fa-regular fa-folder-open"></i> 选择
                                 </button>
-                                <button class="btn btn-outline-secondary" type="button" @click="openPath(config.emoji_global_dir, 'explorer')" title="打开文件夹">
-                                    <i class="fa-solid fa-folder"></i>
-                                </button>
                             </div>
                             <div class="form-text text-muted" v-if="config.emoji_save_mode === 'global'">
                                 所有项目的图标都将保存在此统一目录中，不受根目录切换影响。
