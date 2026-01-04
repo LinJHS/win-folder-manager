@@ -175,8 +175,29 @@
                             </div>
                         </div>
 
-                        <div class="mb-4" v-if="config.ai_config?.enabled">
-                            <label class="form-label fw-bold">Emoji 缓存模式</label>
+
+                        
+                        <label class="form-label fw-bold">图标库管理 <span class="fw-normal text-muted small">（选填）</span></label>
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr>
+                                    <th>图标别名</th>
+                                    <th>ICO 路径</th>
+                                    <th width="50">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(icon, idx) in config.icons">
+                                    <td><input type="text" class="form-control form-control-sm" v-model="icon.name"></td>
+                                    <td><input type="text" class="form-control form-control-sm" v-model="icon.path"></td>
+                                    <td><button class="btn btn-danger btn-sm" @click="removeIcon(idx)">×</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button class="btn btn-outline-primary btn-sm" @click="addIcon">+ 添加新图标</button>
+
+                        <div class="mt-4 mb-4">
+                            <label class="form-label fw-bold">图标缓存模式</label>
                             <div class="d-flex gap-3 mb-2">
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="emojiMode" id="modeGlobal" value="global" v-model="config.emoji_save_mode">
@@ -211,25 +232,6 @@
                                 图标将保存在当前管理的根目录下的指定子文件夹中。切换根目录时，缓存位置也会随之改变。
                             </div>
                         </div>
-                        
-                        <label class="form-label fw-bold">图标库管理 <span class="fw-normal text-muted small">（选填）</span></label>
-                        <table class="table table-bordered table-sm">
-                            <thead>
-                                <tr>
-                                    <th>图标别名</th>
-                                    <th>ICO 路径</th>
-                                    <th width="50">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(icon, idx) in config.icons">
-                                    <td><input type="text" class="form-control form-control-sm" v-model="icon.name"></td>
-                                    <td><input type="text" class="form-control form-control-sm" v-model="icon.path"></td>
-                                    <td><button class="btn btn-danger btn-sm" @click="removeIcon(idx)">×</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <button class="btn btn-outline-primary btn-sm" @click="addIcon">+ 添加新图标</button>
 
                         <hr class="my-4">
                         
@@ -354,7 +356,7 @@
                         icons: [],
                         ai_config: {  // AI 配置
                             enabled: false,
-                            active_provider: 'DeepSeek',
+                            active_provider: 'SiliconFlow',
                             providers: []
                         }
                     },
@@ -471,8 +473,40 @@
                 },
                 
                 // Config Icon Management
-                addIcon() {
-                    this.config.icons.push({ name: '新图标', path: '', index: 0 });
+                async addIcon() {
+                    try {
+                        const res = await axios.post('/api/select_file');
+                        if (res.data.status === 'success' && res.data.path) {
+                            const path = res.data.path;
+                            const ext = path.split('.').pop().toLowerCase();
+                            
+                            let finalPath = path;
+                            // Use filename (without extension) as default name
+                            let name = path.split(/[\\/]/).pop().split('.').slice(0, -1).join('.');
+                            if (!name) name = '新图标';
+                            
+                            if (ext !== 'ico') {
+                                // Convert to ICO
+                                this.showToast('正在转换图片...', 'info');
+                                const convRes = await axios.post('/api/convert_to_ico', { source_path: path });
+                                if (convRes.data.status === 'success') {
+                                    finalPath = convRes.data.ico_path;
+                                    this.showToast('转换成功', 'success');
+                                } else {
+                                    this.showToast('转换失败: ' + convRes.data.msg, 'error');
+                                    return; 
+                                }
+                            }
+                            
+                            this.config.icons.push({ name: name, path: finalPath });
+                        } else {
+                            // Cancelled or error, fallback to empty row
+                             this.config.icons.push({ name: '新图标', path: '', index: 0 });
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        this.config.icons.push({ name: '新图标', path: '', index: 0 });
+                    }
                 },
                 removeIcon(index) {
                     this.config.icons.splice(index, 1);

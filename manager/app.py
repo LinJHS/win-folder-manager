@@ -222,6 +222,66 @@ def select_folder_dialog():
         return jsonify({"status": "error", "msg": str(e)})
 
 
+@app.route('/api/select_file', methods=['POST'])
+def select_file_dialog():
+    if os.name != 'nt':
+        return jsonify({"status": "error", "msg": "File selection is only supported on Windows."})
+
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except ImportError:
+        return jsonify({"status": "error", "msg": "Tkinter module not found."})
+
+    try:
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+        
+        file_path = filedialog.askopenfilename(
+            title="Select Icon or Image",
+            filetypes=[("Image files", "*.ico;*.png;*.jpg;*.jpeg;*.bmp;*.webp"), ("All files", "*.*")]
+        )
+        
+        root.destroy()
+        
+        if file_path:
+            path = os.path.normpath(file_path)
+            return jsonify({"status": "success", "path": path})
+        else:
+            return jsonify({"status": "cancel"})
+    except Exception as e:
+        return jsonify({"status": "error", "msg": str(e)})
+
+
+@app.route('/api/convert_to_ico', methods=['POST'])
+def convert_image_to_ico():
+    from .icon_converter import IconConverter
+
+    data = request.json
+    source_path = data.get('source_path')
+    
+    if not source_path or not os.path.exists(source_path):
+        return jsonify({"status": "error", "msg": "File not found"}), 400
+        
+    try:
+        config = load_config()
+        
+        # Determine cache dir
+        # For library icons, we default to global cache if possible
+        cache_dir = config.get('emoji_global_dir')
+            
+        if not cache_dir:
+             cache_dir = os.path.join(get_config_dir(), 'icons')
+             
+        converter = IconConverter(cache_dir)
+        ico_path = converter.convert_from_file(source_path)
+            
+        return jsonify({"status": "success", "ico_path": ico_path})
+    except Exception as e:
+        return jsonify({"status": "error", "msg": str(e)}), 500
+
+
 @app.route('/api/folders')
 def get_folders():
     config = load_config()
@@ -330,7 +390,7 @@ def ai_generate():
 @app.route('/api/emoji_to_ico', methods=['POST'])
 def emoji_to_ico():
     """将 Emoji 转换为 .ico 文件"""
-    from .emoji_converter import EmojiConverter
+    from .icon_converter import IconConverter
 
     data = request.json
     emoji = data.get('emoji', '')
@@ -356,8 +416,8 @@ def emoji_to_ico():
             # 全局模式
             cache_dir = config.get('emoji_global_dir')
 
-        converter = EmojiConverter(cache_dir)
-        ico_path = converter.convert(emoji, folder_path)
+        converter = IconConverter(cache_dir)
+        ico_path = converter.convert_emoji(emoji, folder_path)
 
         return jsonify({"status": "success", "ico_path": ico_path})
     except Exception as e:
@@ -368,7 +428,7 @@ def emoji_to_ico():
 def batch_ai_generate():
     """批量 AI 生成文件夹别名"""
     from .ai_service import AINamingService
-    from .emoji_converter import EmojiConverter
+    from .icon_converter import IconConverter
 
     data = request.json
     
@@ -411,7 +471,7 @@ def batch_ai_generate():
 
         folders = folder_logic.scan_folders(root)
         service = AINamingService(provider_config)
-        converter = EmojiConverter(cache_dir)
+        converter = IconConverter(cache_dir)
 
         count = 0
         errors = []
@@ -428,7 +488,7 @@ def batch_ai_generate():
                 try:
                     result = service.generate(folder['name'])
                     if result['status'] == 'success':
-                        ico_path = converter.convert(result['emoji'], folder['path'])
+                        ico_path = converter.convert_emoji(result['emoji'], folder['path'])
                         folder_logic.update_folder(
                             folder['path'],
                             result['alias'],
