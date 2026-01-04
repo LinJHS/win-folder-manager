@@ -21,6 +21,8 @@
 
 **Win Folder Manager** 允许您通过简洁的 Web 界面轻松自定义 Windows 文件夹。无需手动编辑隐藏的系统文件，即可设置自定义图标、别名（本地化名称）和提示信息。
 
+作者博客：[Win Folder Manager：基于 Windows 原生机制的文件夹美化工具](https://linjhs.top/archives/win-folder-manager)
+
 ## ✨ 功能特性
 
 - 🖼️ **自定义图标**：轻松设置文件夹图标（支持绝对路径和相对路径）。
